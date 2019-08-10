@@ -36,8 +36,8 @@ textbox = TextBox()
 
 vars = {
         "state" : 0,
-        "processes" : '',
-        "resources" : ''
+        "processes" : 0,
+        "resources" : 0
         }
 
 def setup():
@@ -56,7 +56,7 @@ def draw():
         textbox.drawTextBox()
         
         if key.isdigit():
-            vars["processes"] = key
+            vars["processes"] = int(key)
             textbox.printKey()
     
         if (key == ENTER or key == RETURN):
@@ -66,20 +66,9 @@ def draw():
         textbox.drawTextBox()
         
         if key.isdigit():
-            vars["resources"] = key
+            vars["resources"] = int(key)
             textbox.printKey()
 
         # TODO: FIX. At this point key always equals ENTER (because of the last ENTER pressed)
         if (key == ENTER or key == RETURN):
             vars["state"] = 2
-        
-    
-            
-            
-            
-            
-            
-            
-            
-            
-            
