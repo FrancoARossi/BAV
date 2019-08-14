@@ -19,6 +19,18 @@ class MaxMatrix:
             for column in range(0, self.n_resources):
                 self.vals[row].append('')
     
+    #TODO: Give this class the iterator protocol
+    def __iter__(self):
+        return self
+    
+    def __next__(self):
+        for row in self.vals:
+            for val in self.vals[row]:
+                return val
+        
+        raise StopIteration
+        
+    
     def drawMatrix(self):
         noFill()
         strokeWeight(1.5)
@@ -36,18 +48,16 @@ class MaxMatrix:
         if (key.isdigit() and key != ENTER and key != RETURN):
             vars["valid_input"] = True
             self.vals[self.row_counter][self.column_counter] = int(key)
-            print("vals key.isdigit(): \0")
-            println(self.vals)
 
         if ((key == ENTER or key == RETURN) and vars["valid_input"]):
             # TODO: fix this
-            if (self.column_counter < (self.n_resources - 1)):
+            if (self.column_counter < self.n_resources):
                 self.column_counter += 1
-            if (self.row_counter == (self.n_processes - 1)):
+            if (self.column_counter == self.n_resources and self.row_counter < self.n_processes):
                 self.row_counter += 1
                 self.column_counter = 0
-                println("Next Row")
-            #println(self.vals)
+            if (self.row_counter == self.n_processes):
+                vars["current_state"] = 3
             vars["valid_input"] = False
     
     def isPrintable(self, row):
@@ -59,15 +69,7 @@ class MaxMatrix:
                 for j in range(0, len(self.vals[i])):
                     fill(0)
                     textSize(30)
-                    text(self.vals[i][j], (MATRIX_X + 10) + (10*i), (MATRIX_Y + 30) + (30*j))
-        
-class AllocMatrix:
-    #TODO
-    pass
-    
-class ReqMatrix:
-    #TODO
-    pass
+                    text(self.vals[i][j], (MATRIX_X + 10) + (40*j), (MATRIX_Y + 30) + (40*i))
         
 class InputBox:
     def __init__(self, next_state = 0):
@@ -118,7 +120,6 @@ def draw():
         input_resources.drawInputBox()
         input_resources.readValue()
         input_resources.printValue()
-        # I used the vars dictionary to store the matrix because there is a scope error (maybe Prossesing.py bug?)
         vars["max_matrix"] = MaxMatrix(input_processes.value, input_resources.value)
     
     if (vars["current_state"] == 2):
