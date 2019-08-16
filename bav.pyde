@@ -21,16 +21,22 @@ class MaxMatrix:
     
     #TODO: Give this class the iterator protocol
     def __iter__(self):
+        self.r = 0
+        self.c = 0
         return self
     
-    def __next__(self):
-        for row in self.vals:
-            for val in self.vals[row]:
-                return val
+    def next(self):
+        if self.r < self.n_processes:
+            if self.c < self.n_resources:
+                ret = self.vals[self.r][self.c]
+                if (self.c == (self.n_resources - 1)):
+                    self.r += 1
+                    self.c = 0
+                self.c += 1
+                return ret
+        else:
+            raise StopIteration
         
-        raise StopIteration
-        
-    
     def drawMatrix(self):
         noFill()
         strokeWeight(1.5)
@@ -70,6 +76,47 @@ class MaxMatrix:
                     fill(0)
                     textSize(30)
                     text(self.vals[i][j], (MATRIX_X + 10) + (40*j), (MATRIX_Y + 30) + (40*i))
+
+class AllocMatrix(MaxMatrix):
+    def drawMatrix(self):
+        noFill()
+        strokeWeight(1.5)
+        alloc_matrix_y = MATRIX_Y + map(self.n_processes, 0, 5, 100, 300)
+        
+        rect(MATRIX_X, alloc_matrix_y, self.n_resources*DISTANCE, self.n_processes*DISTANCE)
+        #TODO show processes and resources for each row and column
+        if (self.n_processes >= 1 and self.n_resources >= 1):
+            for i in range(1, self.n_processes):
+                line(MATRIX_X - DISTANCE, alloc_matrix_y + (DISTANCE * i), MATRIX_X + self.n_resources * DISTANCE, alloc_matrix_y + (DISTANCE * i))
+            
+            for j in range(1, self.n_resources):
+                line(MATRIX_X + (DISTANCE * j), alloc_matrix_y - DISTANCE, MATRIX_X + (DISTANCE * j), alloc_matrix_y + self.n_processes * DISTANCE)
+    
+    def printValues(self):
+        alloc_matrix_y = MATRIX_Y + map(self.n_processes, 0, 5, 100, 300)
+        
+        for i in range(0, self.n_processes):
+            if (self.isPrintable(self.vals[i])):
+                for j in range(0, len(self.vals[i])):
+                    fill(0)
+                    textSize(30)
+                    text(self.vals[i][j], (MATRIX_X + 10) + (40 * j), (alloc_matrix_y + 30) + (40 * i))
+    
+    def readValues(self):
+        if (key.isdigit() and key != ENTER and key != RETURN):
+            vars["valid_input"] = True
+            self.vals[self.row_counter][self.column_counter] = int(key)
+
+        if ((key == ENTER or key == RETURN) and vars["valid_input"]):
+            # TODO: fix this
+            if (self.column_counter < self.n_resources):
+                self.column_counter += 1
+            if (self.column_counter == self.n_resources and self.row_counter < self.n_processes):
+                self.row_counter += 1
+                self.column_counter = 0
+            if (self.row_counter == self.n_processes):
+                vars["current_state"] = 4
+            vars["valid_input"] = False
         
 class InputBox:
     def __init__(self, next_state = 0):
@@ -111,22 +158,32 @@ def draw():
     
     background(0, 200, 255)
     
+    # Read amount of processes
     if (vars["current_state"] == 0):
         input_processes.drawInputBox()
         input_processes.readValue()
         input_processes.printValue()
     
+    # Read amount of resources and instanciate objects
     if (vars["current_state"] == 1):
         input_resources.drawInputBox()
         input_resources.readValue()
         input_resources.printValue()
         vars["max_matrix"] = MaxMatrix(input_processes.value, input_resources.value)
+        vars["alloc_matrix"] = AllocMatrix(input_processes.value, input_resources.value)
+    
+    # Read max_matrix values
     
     if (vars["current_state"] == 2):
         vars["max_matrix"].drawMatrix()
         vars["max_matrix"].readValues()
         vars["max_matrix"].printValues()
+        
+    #Read alloc_matrix values
     
     if (vars["current_state"] == 3):
         vars["max_matrix"].drawMatrix()
         vars["max_matrix"].printValues()
+        vars["alloc_matrix"].drawMatrix()
+        vars["alloc_matrix"].readValues()
+        vars["alloc_matrix"].printValues()
