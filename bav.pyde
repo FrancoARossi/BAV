@@ -41,7 +41,7 @@ class Matrix(object):
     
     # Returns an already initialized matrix with the results of the substractions (no need to use initMatrix())    
     def __sub__(self, other):
-        tmp_matrix = Matrix(self.n_processes, self.n_resources)
+        tmp_matrix = ReqMatrix(self.n_processes, self.n_resources)
         tmp_matrix.initMatrix()
         for r in range(0, self.n_processes):
             for c in range(0, self.n_resources):
@@ -131,7 +131,30 @@ class AllocMatrix(Matrix):
                     text(self.vals[i][j], (MATRIX_X + 10) + (DISTANCE * j), (alloc_matrix_y + 30) + (DISTANCE * i))
             
 class ReqMatrix(Matrix):
-    #TODO
+    
+    def drawMatrix(self):
+        noFill()
+        strokeWeight(1.5)
+        alloc_matrix_y = MATRIX_Y + map(self.n_processes, 0, 5, 300, 500)
+        
+        rect(MATRIX_X, alloc_matrix_y, self.n_resources*DISTANCE, self.n_processes*DISTANCE)
+        #TODO show processes and resources for each row and column
+        if (self.n_processes >= 1 and self.n_resources >= 1):
+            for i in range(1, self.n_processes):
+                line(MATRIX_X - DISTANCE, alloc_matrix_y + (DISTANCE * i), MATRIX_X + self.n_resources * DISTANCE, alloc_matrix_y + (DISTANCE * i))
+            
+            for j in range(1, self.n_resources):
+                line(MATRIX_X + (DISTANCE * j), alloc_matrix_y - DISTANCE, MATRIX_X + (DISTANCE * j), alloc_matrix_y + self.n_processes * DISTANCE)
+    
+    def printValues(self):
+        alloc_matrix_y = MATRIX_Y + map(self.n_processes, 0, 5, 300, 500)
+        
+        for i in range(0, self.n_processes):
+            if (self.isPrintable(self.vals[i])):
+                for j in range(0, len(self.vals[i])):
+                    fill(0)
+                    textSize(30)
+                    text(self.vals[i][j], (MATRIX_X + 10) + (DISTANCE * j), (alloc_matrix_y + 30) + (DISTANCE * i))
     pass
         
 class InputBox:
@@ -206,14 +229,20 @@ def draw():
         vars["alloc_matrix"].readValues()
         vars["alloc_matrix"].printValues()
     
-    #TODO: Create requirement matrix
+    #req_matrix instanciation
     if (vars["current_state"] == 4):
+        vars["max_matrix"].drawMatrix()
+        vars["max_matrix"].printValues()
+        vars["alloc_matrix"].drawMatrix()
+        vars["alloc_matrix"].printValues()
         vars["req_matrix"] = vars["max_matrix"] - vars["alloc_matrix"]
-        vars["req_matrix"].drawMatrix()
-        vars["req_matrix"].printValues()
         vars["current_state"] = 5
     
-    #DEBUG
+    #Show matrixes
     if (vars["current_state"] == 5):
-        print("Done!")
-        delay(5000)
+        vars["max_matrix"].drawMatrix()
+        vars["max_matrix"].printValues()
+        vars["alloc_matrix"].drawMatrix()
+        vars["alloc_matrix"].printValues()
+        vars["req_matrix"].drawMatrix()
+        vars["req_matrix"].printValues()
