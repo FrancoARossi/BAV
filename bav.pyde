@@ -1,25 +1,27 @@
 MATRIX_X = 100
 MATRIX_Y = 80
-DISTANCE = 40
+DISTANCE = 35
 
 vars = {
         "current_state" : 0,
         "valid_input" : False
         }
 
-class MaxMatrix:
+class Matrix(object):
+    
     def __init__(self, n_processes = 0, n_resources = 0):
         self.n_processes = n_processes
         self.n_resources = n_resources
         self.vals = []
         self.row_counter = 0
         self.column_counter = 0
+    
+    def initMatrix(self):
         for row in range(0, self.n_processes):
             self.vals.append([])
             for column in range(0, self.n_resources):
                 self.vals[row].append('')
     
-    #TODO: Give this class the iterator protocol
     def __iter__(self):
         self.r = 0
         self.c = 0
@@ -36,7 +38,21 @@ class MaxMatrix:
                 return ret
         else:
             raise StopIteration
-        
+    
+    # Returns an already initialized matrix with the results of the substractions (no need to use initMatrix())    
+    def __sub__(self, other):
+        tmp_matrix = Matrix(self.n_processes, self.n_resources)
+        tmp_matrix.initMatrix()
+        for r in range(0, self.n_processes):
+            for c in range(0, self.n_resources):
+                tmp_matrix.vals[r][c] = self.vals[r][c] - other.vals[r][c]
+        return tmp_matrix
+    
+    def isPrintable(self, row):
+        if (len(row) > 0): return True
+
+class MaxMatrix(Matrix):
+    
     def drawMatrix(self):
         noFill()
         strokeWeight(1.5)
@@ -56,7 +72,6 @@ class MaxMatrix:
             self.vals[self.row_counter][self.column_counter] = int(key)
 
         if ((key == ENTER or key == RETURN) and vars["valid_input"]):
-            # TODO: fix this
             if (self.column_counter < self.n_resources):
                 self.column_counter += 1
             if (self.column_counter == self.n_resources and self.row_counter < self.n_processes):
@@ -66,18 +81,16 @@ class MaxMatrix:
                 vars["current_state"] = 3
             vars["valid_input"] = False
     
-    def isPrintable(self, row):
-        if (len(row) > 0): return True
-    
     def printValues(self):
         for i in range(0, self.n_processes):
             if (self.isPrintable(self.vals[i])):
                 for j in range(0, len(self.vals[i])):
                     fill(0)
                     textSize(30)
-                    text(self.vals[i][j], (MATRIX_X + 10) + (40*j), (MATRIX_Y + 30) + (40*i))
+                    text(self.vals[i][j], (MATRIX_X + 10) + (DISTANCE * j), (MATRIX_Y + 30) + (DISTANCE * i))
 
-class AllocMatrix(MaxMatrix):
+class AllocMatrix(Matrix):
+    
     def drawMatrix(self):
         noFill()
         strokeWeight(1.5)
@@ -92,23 +105,12 @@ class AllocMatrix(MaxMatrix):
             for j in range(1, self.n_resources):
                 line(MATRIX_X + (DISTANCE * j), alloc_matrix_y - DISTANCE, MATRIX_X + (DISTANCE * j), alloc_matrix_y + self.n_processes * DISTANCE)
     
-    def printValues(self):
-        alloc_matrix_y = MATRIX_Y + map(self.n_processes, 0, 5, 100, 300)
-        
-        for i in range(0, self.n_processes):
-            if (self.isPrintable(self.vals[i])):
-                for j in range(0, len(self.vals[i])):
-                    fill(0)
-                    textSize(30)
-                    text(self.vals[i][j], (MATRIX_X + 10) + (40 * j), (alloc_matrix_y + 30) + (40 * i))
-    
     def readValues(self):
         if (key.isdigit() and key != ENTER and key != RETURN):
             vars["valid_input"] = True
             self.vals[self.row_counter][self.column_counter] = int(key)
 
         if ((key == ENTER or key == RETURN) and vars["valid_input"]):
-            # TODO: fix this
             if (self.column_counter < self.n_resources):
                 self.column_counter += 1
             if (self.column_counter == self.n_resources and self.row_counter < self.n_processes):
@@ -117,6 +119,20 @@ class AllocMatrix(MaxMatrix):
             if (self.row_counter == self.n_processes):
                 vars["current_state"] = 4
             vars["valid_input"] = False
+    
+    def printValues(self):
+        alloc_matrix_y = MATRIX_Y + map(self.n_processes, 0, 5, 100, 300)
+        
+        for i in range(0, self.n_processes):
+            if (self.isPrintable(self.vals[i])):
+                for j in range(0, len(self.vals[i])):
+                    fill(0)
+                    textSize(30)
+                    text(self.vals[i][j], (MATRIX_X + 10) + (DISTANCE * j), (alloc_matrix_y + 30) + (DISTANCE * i))
+            
+class ReqMatrix(Matrix):
+    #TODO
+    pass
         
 class InputBox:
     def __init__(self, next_state = 0):
@@ -157,6 +173,8 @@ def setup():
 def draw():
     
     background(0, 200, 255)
+    #DEBUG
+    print(vars["current_state"])
     
     # Read amount of processes
     if (vars["current_state"] == 0):
@@ -170,20 +188,32 @@ def draw():
         input_resources.readValue()
         input_resources.printValue()
         vars["max_matrix"] = MaxMatrix(input_processes.value, input_resources.value)
+        vars["max_matrix"].initMatrix()
         vars["alloc_matrix"] = AllocMatrix(input_processes.value, input_resources.value)
+        vars["alloc_matrix"].initMatrix()
     
     # Read max_matrix values
-    
     if (vars["current_state"] == 2):
         vars["max_matrix"].drawMatrix()
         vars["max_matrix"].readValues()
         vars["max_matrix"].printValues()
         
     #Read alloc_matrix values
-    
     if (vars["current_state"] == 3):
         vars["max_matrix"].drawMatrix()
         vars["max_matrix"].printValues()
         vars["alloc_matrix"].drawMatrix()
         vars["alloc_matrix"].readValues()
         vars["alloc_matrix"].printValues()
+    
+    #TODO: Create requirement matrix
+    if (vars["current_state"] == 4):
+        vars["req_matrix"] = vars["max_matrix"] - vars["alloc_matrix"]
+        vars["req_matrix"].drawMatrix()
+        vars["req_matrix"].printValues()
+        vars["current_state"] = 5
+    
+    #DEBUG
+    if (vars["current_state"] == 5):
+        print("Done!")
+        delay(5000)
