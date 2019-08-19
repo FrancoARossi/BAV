@@ -9,6 +9,8 @@ vars = {
         "valid_input" : False
         }
 
+objects = {}
+
 #####Classes#####
 
 class Matrix(object):
@@ -19,8 +21,9 @@ class Matrix(object):
         self.vals = []
         self.row_counter = 0
         self.column_counter = 0
+        self.is_renderable = False
     
-    def initMatrix(self):
+    def initObject(self):
         for row in range(0, self.n_processes):
             self.vals.append([])
             for column in range(0, self.n_resources):
@@ -43,10 +46,10 @@ class Matrix(object):
         else:
             raise StopIteration
     
-    # Returns an already initialized matrix with the results of the substractions (no need to use initMatrix())    
+    # Returns an already initialized matrix with the results of the substractions (no need to use initObject())    
     def __sub__(self, other):
-        tmp_matrix = ReqMatrix(self.n_processes, self.n_resources)
-        tmp_matrix.initMatrix()
+        tmp_matrix = NeededMatrix(self.n_processes, self.n_resources)
+        tmp_matrix.initObject()
         for r in range(0, self.n_processes):
             for c in range(0, self.n_resources):
                 tmp_matrix.vals[r][c] = self.vals[r][c] - other.vals[r][c]
@@ -54,19 +57,24 @@ class Matrix(object):
 
 class MaxMatrix(Matrix):
     
-    def drawMatrix(self):
+    def render(self):
         noFill()
+        textSize(20)
         strokeWeight(1.5)
         
+        text("Maximum", GLOBAL_X - DISTANCE, GLOBAL_Y - DISTANCE - 10)
         rect(GLOBAL_X, GLOBAL_Y, self.n_resources*DISTANCE, self.n_processes*DISTANCE)
-        #TODO show processes and resources for each row and column
         if (self.n_processes >= 1 and self.n_resources >= 1):
             for i in range(1, self.n_processes):
                 line(GLOBAL_X - DISTANCE, GLOBAL_Y + (DISTANCE * i), GLOBAL_X + self.n_resources * DISTANCE, GLOBAL_Y + (DISTANCE * i))
-            
             for j in range(1, self.n_resources):
                 line(GLOBAL_X + (DISTANCE * j), GLOBAL_Y - DISTANCE, GLOBAL_X + (DISTANCE * j), GLOBAL_Y + self.n_processes * DISTANCE)
-    
+                
+            for i in range(0, self.n_processes):
+                text("P" + str(i+1), GLOBAL_X - DISTANCE, GLOBAL_Y + DISTANCE * (i+1) - 5)
+            for j in range(0, self.n_resources):
+                text("R" + str(j+1), GLOBAL_X + DISTANCE * j + 3, GLOBAL_Y - 10)
+            
     def readValues(self):
         if (key.isdigit() and key != ENTER and key != RETURN):
             vars["valid_input"] = True
@@ -79,7 +87,8 @@ class MaxMatrix(Matrix):
                 self.row_counter += 1
                 self.column_counter = 0
             if (self.row_counter == self.n_processes):
-                vars["current_state"] = 4
+                vars["current_state"] = 5
+                objects["alloc_matrix"].is_renderable = True
             vars["valid_input"] = False
     
     def printValues(self):
@@ -91,19 +100,24 @@ class MaxMatrix(Matrix):
 
 class AllocMatrix(Matrix):
     
-    def drawMatrix(self):
+    def render(self):
         noFill()
+        textSize(20)
         strokeWeight(1.5)
         alloc_matrix_y = GLOBAL_Y + self.n_processes*DISTANCE + 80
         
+        text("Allocated", GLOBAL_X - DISTANCE, alloc_matrix_y - DISTANCE - 10)
         rect(GLOBAL_X, alloc_matrix_y, self.n_resources*DISTANCE, self.n_processes*DISTANCE)
-        #TODO show processes and resources for each row and column
         if (self.n_processes >= 1 and self.n_resources >= 1):
             for i in range(1, self.n_processes):
                 line(GLOBAL_X - DISTANCE, alloc_matrix_y + (DISTANCE * i), GLOBAL_X + self.n_resources * DISTANCE, alloc_matrix_y + (DISTANCE * i))
-            
             for j in range(1, self.n_resources):
                 line(GLOBAL_X + (DISTANCE * j), alloc_matrix_y - DISTANCE, GLOBAL_X + (DISTANCE * j), alloc_matrix_y + self.n_processes * DISTANCE)
+            
+            for i in range(0, self.n_processes):
+                text("P" + str(i+1), GLOBAL_X - DISTANCE, alloc_matrix_y + DISTANCE * (i+1) - 5)
+            for j in range(0, self.n_resources):
+                text("R" + str(j+1), GLOBAL_X + DISTANCE * j + 3, alloc_matrix_y - 10)
     
     def readValues(self):
         if (key.isdigit() and key != ENTER and key != RETURN):
@@ -111,7 +125,7 @@ class AllocMatrix(Matrix):
             self.vals[self.row_counter][self.column_counter] = int(key)
 
         if ((key == ENTER or key == RETURN) and vars["valid_input"]):
-            if (self.vals[self.row_counter][self.column_counter] > vars["max_matrix"].vals[self.row_counter][self.column_counter]):
+            if (self.vals[self.row_counter][self.column_counter] > objects["max_matrix"].vals[self.row_counter][self.column_counter]):
                 raise Exception("Can't allocate more resources than needed")
             if (self.column_counter < self.n_resources):
                 self.column_counter += 1
@@ -119,7 +133,7 @@ class AllocMatrix(Matrix):
                 self.row_counter += 1
                 self.column_counter = 0
             if (self.row_counter == self.n_processes):
-                vars["current_state"] = 5
+                vars["current_state"] = 6
             vars["valid_input"] = False
     
     def printValues(self):
@@ -131,30 +145,35 @@ class AllocMatrix(Matrix):
                 textSize(25)
                 text(self.vals[i][j], (GLOBAL_X + 8) + (DISTANCE * j), (alloc_matrix_y + 25) + (DISTANCE * i))
             
-class ReqMatrix(Matrix):
+class NeededMatrix(Matrix):
     
-    def drawMatrix(self):
+    def render(self):
         noFill()
+        textSize(20)
         strokeWeight(1.5)
-        alloc_matrix_y = GLOBAL_Y + 2*self.n_processes*DISTANCE + 160
+        need_matrix_y = GLOBAL_Y + 2*self.n_processes*DISTANCE + 160
         
-        rect(GLOBAL_X, alloc_matrix_y, self.n_resources*DISTANCE, self.n_processes*DISTANCE)
-        #TODO show processes and resources for each row and column
+        text("Needed", GLOBAL_X - DISTANCE, need_matrix_y - DISTANCE - 10)
+        rect(GLOBAL_X, need_matrix_y, self.n_resources*DISTANCE, self.n_processes*DISTANCE)
         if (self.n_processes >= 1 and self.n_resources >= 1):
             for i in range(1, self.n_processes):
-                line(GLOBAL_X - DISTANCE, alloc_matrix_y + (DISTANCE * i), GLOBAL_X + self.n_resources * DISTANCE, alloc_matrix_y + (DISTANCE * i))
-            
+                line(GLOBAL_X - DISTANCE, need_matrix_y + (DISTANCE * i), GLOBAL_X + self.n_resources * DISTANCE, need_matrix_y + (DISTANCE * i))
             for j in range(1, self.n_resources):
-                line(GLOBAL_X + (DISTANCE * j), alloc_matrix_y - DISTANCE, GLOBAL_X + (DISTANCE * j), alloc_matrix_y + self.n_processes * DISTANCE)
+                line(GLOBAL_X + (DISTANCE * j), need_matrix_y - DISTANCE, GLOBAL_X + (DISTANCE * j), need_matrix_y + self.n_processes * DISTANCE)
+            
+            for i in range(0, self.n_processes):
+                text("P" + str(i+1), GLOBAL_X - DISTANCE, need_matrix_y + DISTANCE * (i+1) - 5)
+            for j in range(0, self.n_resources):
+                text("R" + str(j+1), GLOBAL_X + DISTANCE * j + 3, need_matrix_y - 10)
     
     def printValues(self):
-        alloc_matrix_y = GLOBAL_Y + 2*self.n_processes*DISTANCE + 160
+        need_matrix_y = GLOBAL_Y + 2*self.n_processes*DISTANCE + 160
         
         for i in range(0, self.n_processes):
             for j in range(0, len(self.vals[i])):
                 fill(0)
                 textSize(25)
-                text(self.vals[i][j], (GLOBAL_X + 8) + (DISTANCE * j), (alloc_matrix_y + 25) + (DISTANCE * i))
+                text(self.vals[i][j], (GLOBAL_X + 8) + (DISTANCE * j), (need_matrix_y + 25) + (DISTANCE * i))
 
 class TotalVector(object):
     
@@ -165,19 +184,25 @@ class TotalVector(object):
         self.vals = []
         self.vector_y = GLOBAL_Y
         self.vector_x = GLOBAL_X + DISTANCE*self.n_resources + 50
+        self.is_renderable = True
     
-    def initVector(self):
+    def initObject(self):
         for i in range(0, self.n_resources):
             self.vals.append('')
     
-    def drawVector(self):
+    def render(self):
         noFill()
+        textSize(20)
         strokeWeight(1.5)
         
+        text("Total", self.vector_x, self.vector_y - DISTANCE - 10)
         rect(self.vector_x, self.vector_y, self.n_resources*DISTANCE, DISTANCE)
         if (self.n_resources >= 1):
             for i in range(1, self.n_resources):
                 line(self.vector_x + (DISTANCE * i), self.vector_y + DISTANCE, self.vector_x + (DISTANCE * i), self.vector_y - DISTANCE)
+            
+            for j in range(0, self.n_resources):
+                text("R" + str(j+1), self.vector_x + DISTANCE * j + 3, self.vector_y - 10)
     
     def readValues(self):
         if (key.isdigit() and key != ENTER and key != RETURN):
@@ -188,7 +213,8 @@ class TotalVector(object):
             if (self.column_counter < (self.n_resources - 1)):
                 self.column_counter += 1
             else:
-                vars["current_state"] = 3
+                vars["current_state"] = 4
+                objects["max_matrix"].is_renderable = True
             vars["valid_input"] = False
     
     def printValues(self):
@@ -208,8 +234,9 @@ class AvailableVector(object):
         self.vals = []
         self.vector_y = GLOBAL_Y + self.n_processes*DISTANCE + 80
         self.vector_x = GLOBAL_X + DISTANCE*self.n_resources + 50
+        self.is_renderable = True
     
-    def initVector(self, total_vector, alloc_matrix):
+    def initObject(self, total_vector, alloc_matrix):
         for i in range(0, alloc_matrix.n_resources):
             alloc = 0
             for j in range(0, alloc_matrix.n_processes):
@@ -219,14 +246,19 @@ class AvailableVector(object):
                 raise Exception("Theres more resources allocated than the total")
             self.vals.append(val)
     
-    def drawVector(self):
+    def render(self):
         noFill()
+        textSize(20)
         strokeWeight(1.5)
         
+        text("Available", self.vector_x, self.vector_y - DISTANCE - 10)
         rect(self.vector_x, self.vector_y, self.n_resources*DISTANCE, DISTANCE)
         if (self.n_resources >= 1):
             for i in range(1, self.n_resources):
                 line(self.vector_x + (DISTANCE * i), self.vector_y + DISTANCE, self.vector_x + (DISTANCE * i), self.vector_y - DISTANCE)
+            
+            for j in range(0, self.n_resources):
+                text("R" + str(j+1), self.vector_x + DISTANCE * j + 3, self.vector_y - 10)
     
     def printValues(self):
         for i in range(0, self.n_resources):
@@ -239,10 +271,10 @@ class InputBox(object):
         self.value = 1
         self.next_state = next_state
         
-    def drawInputBox(self):
+    def render(self):
         fill(255)
         strokeWeight(1)
-        rect(525, 275, 100, 100) #Maybe use __init__ for adjustable size
+        rect(525, 275, 100, 100)
     
     def readValue(self):
         if (key.isdigit() and key != '0' and key != ENTER and key != RETURN):
@@ -260,8 +292,14 @@ class InputBox(object):
 
 #####MAIN#####
 
-input_processes = InputBox(1)
-input_resources = InputBox(2)
+vars["input_processes"] = InputBox(1)
+vars["input_resources"] = InputBox(2)
+
+def renderObjects():
+    for object in objects.values():
+            if object.is_renderable:
+                object.render()
+                object.printValues()
 
 def setup():
     
@@ -278,83 +316,58 @@ def draw():
     #DEBUG
     print(vars["current_state"])
     
-    # Read amount of processes
+    #Read amount of processes
     if (vars["current_state"] == 0):
-        input_processes.drawInputBox()
-        input_processes.readValue()
-        input_processes.printValue()
+        vars["input_processes"].render()
+        vars["input_processes"].readValue()
+        vars["input_processes"].printValue()
     
-    # Read amount of resources and instanciate objects
+    #Read amount of resources
     if (vars["current_state"] == 1):
-        input_resources.drawInputBox()
-        input_resources.readValue()
-        input_resources.printValue()
-        vars["total_vector"] = TotalVector(input_processes.value, input_resources.value)
-        vars["total_vector"].initVector()
-        vars["max_matrix"] = MaxMatrix(input_processes.value, input_resources.value)
-        vars["max_matrix"].initMatrix()
-        vars["alloc_matrix"] = AllocMatrix(input_processes.value, input_resources.value)
-        vars["alloc_matrix"].initMatrix()
+        vars["input_resources"].render()
+        vars["input_resources"].readValue()
+        vars["input_resources"].printValue()
     
+    #Instanciate objects
     if (vars["current_state"] == 2):
-        #TODO
-        vars["total_vector"].drawVector()
-        vars["total_vector"].readValues()
-        vars["total_vector"].printValues()
+        objects["total_vector"] = TotalVector(vars["input_processes"].value, vars["input_resources"].value)
+        objects["max_matrix"] = MaxMatrix(vars["input_processes"].value, vars["input_resources"].value)
+        objects["alloc_matrix"] = AllocMatrix(vars["input_processes"].value, vars["input_resources"].value)
+        for object in objects.values():
+            object.initObject()
+        renderObjects()
+        vars["current_state"] = 3
+        
     
-    # Read max_matrix values
+    #Read total_vector values
     if (vars["current_state"] == 3):
-        vars["total_vector"].drawVector()
-        vars["total_vector"].printValues()
-        vars["max_matrix"].drawMatrix()
-        vars["max_matrix"].readValues()
-        vars["max_matrix"].printValues()
+        renderObjects()
+        objects["total_vector"].readValues()
+    
+    #Read max_matrix values
+    if (vars["current_state"] == 4):
+        renderObjects()
+        objects["max_matrix"].readValues()
         
     #Read alloc_matrix values
-    if (vars["current_state"] == 4):
-        vars["total_vector"].drawVector()
-        vars["total_vector"].printValues()
-        vars["max_matrix"].drawMatrix()
-        vars["max_matrix"].printValues()
-        vars["alloc_matrix"].drawMatrix()
-        vars["alloc_matrix"].readValues()
-        vars["alloc_matrix"].printValues()
-    
     if (vars["current_state"] == 5):
-        vars["available_vector"] = AvailableVector(vars["total_vector"].n_processes, vars["total_vector"].n_resources)
-        vars["available_vector"].initVector(vars["total_vector"], vars["alloc_matrix"])
-        vars["available_vector"].drawVector()
-        vars["available_vector"].printValues()
-        vars["total_vector"].drawVector()
-        vars["total_vector"].printValues()
-        vars["max_matrix"].drawMatrix()
-        vars["max_matrix"].printValues()
-        vars["alloc_matrix"].drawMatrix()
-        vars["alloc_matrix"].printValues()
-        vars["current_state"] = 6
+        renderObjects()
+        objects["alloc_matrix"].readValues()
     
-    #req_matrix instanciation
+    #available_vector instanciation
     if (vars["current_state"] == 6):
-        vars["total_vector"].drawVector()
-        vars["total_vector"].printValues()
-        vars["available_vector"].drawVector()
-        vars["available_vector"].printValues()
-        vars["max_matrix"].drawMatrix()
-        vars["max_matrix"].printValues()
-        vars["alloc_matrix"].drawMatrix()
-        vars["alloc_matrix"].printValues()
-        vars["req_matrix"] = vars["max_matrix"] - vars["alloc_matrix"]
+        objects["available_vector"] = AvailableVector(objects["total_vector"].n_processes, objects["total_vector"].n_resources)
+        objects["available_vector"].initObject(objects["total_vector"], objects["alloc_matrix"])
+        renderObjects()
         vars["current_state"] = 7
     
-    #Show matrixes and vectors
+    #needed_matrix creation
     if (vars["current_state"] == 7):
-        vars["total_vector"].drawVector()
-        vars["total_vector"].printValues()
-        vars["available_vector"].drawVector()
-        vars["available_vector"].printValues()
-        vars["max_matrix"].drawMatrix()
-        vars["max_matrix"].printValues()
-        vars["alloc_matrix"].drawMatrix()
-        vars["alloc_matrix"].printValues()
-        vars["req_matrix"].drawMatrix()
-        vars["req_matrix"].printValues()
+        renderObjects()
+        objects["needed_matrix"] = objects["max_matrix"] - objects["alloc_matrix"]
+        objects["needed_matrix"].is_renderable = True
+        vars["current_state"] = 8
+    
+    #Show matrixes and vectors
+    if (vars["current_state"] == 8):
+        renderObjects()
