@@ -1,3 +1,5 @@
+#####Global variables#####
+
 GLOBAL_X = 80
 GLOBAL_Y = 80
 DISTANCE = 30
@@ -6,6 +8,8 @@ vars = {
         "current_state" : 0,
         "valid_input" : False
         }
+
+#####Classes#####
 
 class Matrix(object):
     
@@ -206,8 +210,8 @@ class AvailableVector(object):
         self.vector_x = GLOBAL_X + DISTANCE*self.n_resources + 50
     
     def initVector(self, total_vector, alloc_matrix):
-        alloc = 0
         for i in range(0, alloc_matrix.n_resources):
+            alloc = 0
             for j in range(0, alloc_matrix.n_processes):
                 alloc = alloc + alloc_matrix.vals[j][i]
             val = total_vector.vals[i] - alloc
@@ -253,6 +257,8 @@ class InputBox(object):
         fill(0)
         textSize(50)
         text(self.value, 560, 345)
+
+#####MAIN#####
 
 input_processes = InputBox(1)
 input_resources = InputBox(2)
