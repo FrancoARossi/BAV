@@ -6,7 +6,9 @@ DISTANCE = 30
 
 vars = {
         "current_state" : 0,
-        "valid_input" : False
+        "valid_input" : False,
+        "safe_sequence" : [],
+        "sequence_string" : ""
         }
 
 objects = {}
@@ -24,9 +26,9 @@ class Matrix(object):
         self.is_renderable = False
     
     def initObject(self):
-        for row in range(0, self.n_processes):
+        for row in range(self.n_processes):
             self.vals.append([])
-            for column in range(0, self.n_resources):
+            for column in range(self.n_resources):
                 self.vals[row].append('')
     
     def __iter__(self):
@@ -48,10 +50,10 @@ class Matrix(object):
     
     # Returns an already initialized matrix with the results of the substractions (no need to use initObject())    
     def __sub__(self, other):
-        tmp_matrix = NeededMatrix(self.n_processes, self.n_resources)
+        tmp_matrix = NeedMatrix(self.n_processes, self.n_resources)
         tmp_matrix.initObject()
-        for r in range(0, self.n_processes):
-            for c in range(0, self.n_resources):
+        for r in range(self.n_processes):
+            for c in range(self.n_resources):
                 tmp_matrix.vals[r][c] = self.vals[r][c] - other.vals[r][c]
         return tmp_matrix
 
@@ -70,9 +72,9 @@ class MaxMatrix(Matrix):
             for j in range(1, self.n_resources):
                 line(GLOBAL_X + (DISTANCE * j), GLOBAL_Y - DISTANCE, GLOBAL_X + (DISTANCE * j), GLOBAL_Y + self.n_processes * DISTANCE)
                 
-            for i in range(0, self.n_processes):
+            for i in range(self.n_processes):
                 text("P" + str(i+1), GLOBAL_X - DISTANCE, GLOBAL_Y + DISTANCE * (i+1) - 5)
-            for j in range(0, self.n_resources):
+            for j in range(self.n_resources):
                 text("R" + str(j+1), GLOBAL_X + DISTANCE * j + 3, GLOBAL_Y - 10)
             
     def readValues(self):
@@ -92,8 +94,8 @@ class MaxMatrix(Matrix):
             vars["valid_input"] = False
     
     def printValues(self):
-        for i in range(0, self.n_processes):
-            for j in range(0, len(self.vals[i])):
+        for i in range(self.n_processes):
+            for j in range(len(self.vals[i])):
                 fill(0)
                 textSize(25)
                 text(self.vals[i][j], (GLOBAL_X + 8) + (DISTANCE * j), (GLOBAL_Y + 25) + (DISTANCE * i))
@@ -114,9 +116,9 @@ class AllocMatrix(Matrix):
             for j in range(1, self.n_resources):
                 line(GLOBAL_X + (DISTANCE * j), alloc_matrix_y - DISTANCE, GLOBAL_X + (DISTANCE * j), alloc_matrix_y + self.n_processes * DISTANCE)
             
-            for i in range(0, self.n_processes):
+            for i in range(self.n_processes):
                 text("P" + str(i+1), GLOBAL_X - DISTANCE, alloc_matrix_y + DISTANCE * (i+1) - 5)
-            for j in range(0, self.n_resources):
+            for j in range(self.n_resources):
                 text("R" + str(j+1), GLOBAL_X + DISTANCE * j + 3, alloc_matrix_y - 10)
     
     def readValues(self):
@@ -126,7 +128,7 @@ class AllocMatrix(Matrix):
 
         if ((key == ENTER or key == RETURN) and vars["valid_input"]):
             if (self.vals[self.row_counter][self.column_counter] > objects["max_matrix"].vals[self.row_counter][self.column_counter]):
-                raise Exception("Can't allocate more resources than needed")
+                raise Exception("Can't allocate more resources than need")
             if (self.column_counter < self.n_resources):
                 self.column_counter += 1
             if (self.column_counter == self.n_resources and self.row_counter < self.n_processes):
@@ -139,13 +141,13 @@ class AllocMatrix(Matrix):
     def printValues(self):
         alloc_matrix_y = GLOBAL_Y + self.n_processes*DISTANCE + 80
         
-        for i in range(0, self.n_processes):
-            for j in range(0, len(self.vals[i])):
+        for i in range( self.n_processes):
+            for j in range(len(self.vals[i])):
                 fill(0)
                 textSize(25)
                 text(self.vals[i][j], (GLOBAL_X + 8) + (DISTANCE * j), (alloc_matrix_y + 25) + (DISTANCE * i))
             
-class NeededMatrix(Matrix):
+class NeedMatrix(Matrix):
     
     def render(self):
         noFill()
@@ -153,7 +155,7 @@ class NeededMatrix(Matrix):
         strokeWeight(1.5)
         need_matrix_y = GLOBAL_Y + 2*self.n_processes*DISTANCE + 160
         
-        text("Needed", GLOBAL_X - DISTANCE, need_matrix_y - DISTANCE - 10)
+        text("Need", GLOBAL_X - DISTANCE, need_matrix_y - DISTANCE - 10)
         rect(GLOBAL_X, need_matrix_y, self.n_resources*DISTANCE, self.n_processes*DISTANCE)
         if (self.n_processes >= 1 and self.n_resources >= 1):
             for i in range(1, self.n_processes):
@@ -161,16 +163,16 @@ class NeededMatrix(Matrix):
             for j in range(1, self.n_resources):
                 line(GLOBAL_X + (DISTANCE * j), need_matrix_y - DISTANCE, GLOBAL_X + (DISTANCE * j), need_matrix_y + self.n_processes * DISTANCE)
             
-            for i in range(0, self.n_processes):
+            for i in range(self.n_processes):
                 text("P" + str(i+1), GLOBAL_X - DISTANCE, need_matrix_y + DISTANCE * (i+1) - 5)
-            for j in range(0, self.n_resources):
+            for j in range(self.n_resources):
                 text("R" + str(j+1), GLOBAL_X + DISTANCE * j + 3, need_matrix_y - 10)
     
     def printValues(self):
         need_matrix_y = GLOBAL_Y + 2*self.n_processes*DISTANCE + 160
         
-        for i in range(0, self.n_processes):
-            for j in range(0, len(self.vals[i])):
+        for i in range(self.n_processes):
+            for j in range(len(self.vals[i])):
                 fill(0)
                 textSize(25)
                 text(self.vals[i][j], (GLOBAL_X + 8) + (DISTANCE * j), (need_matrix_y + 25) + (DISTANCE * i))
@@ -187,7 +189,7 @@ class TotalVector(object):
         self.is_renderable = True
     
     def initObject(self):
-        for i in range(0, self.n_resources):
+        for i in range(self.n_resources):
             self.vals.append('')
     
     def render(self):
@@ -201,7 +203,7 @@ class TotalVector(object):
             for i in range(1, self.n_resources):
                 line(self.vector_x + (DISTANCE * i), self.vector_y + DISTANCE, self.vector_x + (DISTANCE * i), self.vector_y - DISTANCE)
             
-            for j in range(0, self.n_resources):
+            for j in range(self.n_resources):
                 text("R" + str(j+1), self.vector_x + DISTANCE * j + 3, self.vector_y - 10)
     
     def readValues(self):
@@ -219,7 +221,7 @@ class TotalVector(object):
     
     def printValues(self):
         
-        for i in range(0, self.n_resources):
+        for i in range(self.n_resources):
             fill(0)
             textSize(25)
             text(self.vals[i], (self.vector_x + 8) + (DISTANCE * i), self.vector_y + 25)
@@ -237,9 +239,9 @@ class AvailableVector(object):
         self.is_renderable = True
     
     def initObject(self, total_vector, alloc_matrix):
-        for i in range(0, alloc_matrix.n_resources):
+        for i in range(alloc_matrix.n_resources):
             alloc = 0
-            for j in range(0, alloc_matrix.n_processes):
+            for j in range(alloc_matrix.n_processes):
                 alloc = alloc + alloc_matrix.vals[j][i]
             val = total_vector.vals[i] - alloc
             if (val < 0):
@@ -257,11 +259,11 @@ class AvailableVector(object):
             for i in range(1, self.n_resources):
                 line(self.vector_x + (DISTANCE * i), self.vector_y + DISTANCE, self.vector_x + (DISTANCE * i), self.vector_y - DISTANCE)
             
-            for j in range(0, self.n_resources):
+            for j in range(self.n_resources):
                 text("R" + str(j+1), self.vector_x + DISTANCE * j + 3, self.vector_y - 10)
     
     def printValues(self):
-        for i in range(0, self.n_resources):
+        for i in range(self.n_resources):
             fill(0)
             textSize(25)
             text(self.vals[i], (self.vector_x + 8) + (DISTANCE * i), self.vector_y + 25)
@@ -361,13 +363,59 @@ def draw():
         renderObjects()
         vars["current_state"] = 7
     
-    #needed_matrix creation
+    #need_matrix creation
     if (vars["current_state"] == 7):
         renderObjects()
-        objects["needed_matrix"] = objects["max_matrix"] - objects["alloc_matrix"]
-        objects["needed_matrix"].is_renderable = True
+        objects["need_matrix"] = objects["max_matrix"] - objects["alloc_matrix"]
+        objects["need_matrix"].is_renderable = True
         vars["current_state"] = 8
     
-    #Show matrixes and vectors
+    #Using Bankers Algorithm
     if (vars["current_state"] == 8):
         renderObjects()
+        bankersAlgorithm()
+        vars["current_state"] = 9
+    
+    #Show results    
+    if (vars["current_state"] == 9):
+        fill(0)
+        renderObjects()
+        textSize(24)
+        if len(vars["safe_sequence"]) == vars["input_processes"].value:
+            fill(0, 255, 0)
+            text(vars["sequence_string"], 600, 300)
+        else:
+            fill(255, 0, 0)
+            text("DEADLOCK", 600, 300)
+        
+
+def bankersAlgorithm():
+    temp_need_matrix = NeedMatrix(objects["need_matrix"].n_processes, objects["need_matrix"].n_resources)
+    temp_need_matrix.vals = objects["need_matrix"].vals
+    i = 0
+    time = millis()
+    
+    while i < vars["input_processes"].value:
+        if (millis() - time >= 1000):
+            if (i+1) in vars["safe_sequence"]:
+                i += 1
+                continue
+            if objects["available_vector"].vals >= temp_need_matrix.vals[i]:
+                vars["safe_sequence"].append(i+1)
+                for j in range(vars["input_resources"].value):
+                    objects["available_vector"].vals[j] += objects["alloc_matrix"].vals[i][j]
+                    objects["alloc_matrix"].vals[i][j] = 0
+                
+                vars["sequence_string"] = "<"
+                for j in vars["safe_sequence"]:
+                    vars["sequence_string"] += "P" + str(j) + ", "
+                vars["sequence_string"] = vars["sequence_string"][:-2]
+                vars["sequence_string"] += "> It's a safe sequence"
+                textSize(24)
+                fill(0, 255, 0)
+                print(vars["sequence_string"])
+                text(vars["sequence_string"], 600, 300)
+                i = 0
+                time = millis()
+                continue
+            i += 1
