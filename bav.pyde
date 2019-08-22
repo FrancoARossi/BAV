@@ -374,6 +374,11 @@ def draw():
     if (vars["current_state"] == 8):
         renderObjects()
         bankersAlgorithm()
+        vars["sequence_string"] = "<"
+        for j in vars["safe_sequence"]:
+            vars["sequence_string"] += "P" + str(j) + ", "
+        vars["sequence_string"] = vars["sequence_string"][:-2]
+        vars["sequence_string"] += "> It's a safe sequence"
         vars["current_state"] = 9
     
     #Show results    
@@ -389,6 +394,26 @@ def draw():
             text("DEADLOCK", 600, 300)
         
 
+def bankersAlgorithm():
+    temp_need_matrix = NeedMatrix(objects["need_matrix"].n_processes, objects["need_matrix"].n_resources)
+    temp_need_matrix.vals = objects["need_matrix"].vals
+    i = 0
+    
+    while i < vars["input_processes"].value:
+        if (i+1) in vars["safe_sequence"]:
+            i += 1
+            continue
+        if objects["available_vector"].vals >= temp_need_matrix.vals[i]:
+            vars["safe_sequence"].append(i+1)
+            for j in range(vars["input_resources"].value):
+                objects["available_vector"].vals[j] += objects["alloc_matrix"].vals[i][j]
+                objects["alloc_matrix"].vals[i][j] = 0
+            i = 0
+            continue
+        i += 1
+
+# Maybe print the sequence as its creating
+'''
 def bankersAlgorithm():
     temp_need_matrix = NeedMatrix(objects["need_matrix"].n_processes, objects["need_matrix"].n_resources)
     temp_need_matrix.vals = objects["need_matrix"].vals
@@ -419,3 +444,4 @@ def bankersAlgorithm():
                 time = millis()
                 continue
             i += 1
+'''
