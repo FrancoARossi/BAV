@@ -8,7 +8,9 @@ vars = {
         "current_state" : 0,
         "valid_input" : False,
         "safe_sequence" : [],
-        "sequence_string" : ""
+        "sequence_string" : "",
+        "time" : 0,
+        "counter" : 0
         }
 
 objects = {}
@@ -298,6 +300,7 @@ vars["input_processes"] = InputBox(1)
 vars["input_resources"] = InputBox(2)
 
 def renderObjects():
+    fill(0)
     for object in objects.values():
             if object.is_renderable:
                 object.render()
@@ -307,14 +310,14 @@ def setup():
     
     size(1150, 650)
     frameRate(24.0)
-    background(0, 200, 255)
+    background(220, 220, 220)
     stroke(0)
     
     font = loadFont("ArialNarrow-32.vlw")
 
 def draw():
     
-    background(0, 200, 255)
+    background(220, 220, 220)
     #DEBUG
     print(vars["current_state"])
     
@@ -333,10 +336,11 @@ def draw():
     #Instanciate objects
     if (vars["current_state"] == 2):
         objects["total_vector"] = TotalVector(vars["input_processes"].value, vars["input_resources"].value)
+        objects["total_vector"].initObject()
         objects["max_matrix"] = MaxMatrix(vars["input_processes"].value, vars["input_resources"].value)
+        objects["max_matrix"].initObject()
         objects["alloc_matrix"] = AllocMatrix(vars["input_processes"].value, vars["input_resources"].value)
-        for object in objects.values():
-            object.initObject()
+        objects["alloc_matrix"].initObject()
         renderObjects()
         vars["current_state"] = 3
         
@@ -374,74 +378,51 @@ def draw():
     if (vars["current_state"] == 8):
         renderObjects()
         bankersAlgorithm()
-        vars["sequence_string"] = "<"
-        for j in vars["safe_sequence"]:
-            vars["sequence_string"] += "P" + str(j) + ", "
-        vars["sequence_string"] = vars["sequence_string"][:-2]
-        vars["sequence_string"] += "> It's a safe sequence"
-        vars["current_state"] = 9
     
     #Show results    
     if (vars["current_state"] == 9):
-        fill(0)
         renderObjects()
         textSize(24)
         if len(vars["safe_sequence"]) == vars["input_processes"].value:
-            fill(0, 255, 0)
+            fill(0, 150, 0)
             text(vars["sequence_string"], 600, 300)
         else:
-            fill(255, 0, 0)
+            fill(150, 0, 0)
             text("DEADLOCK", 600, 300)
-        
+        fill(0)
+        textSize(32)
+        text("Press ENTER to start again", 600, 200)
+        '''
+        if (key == ENTER or key == RETURN) and keyPressed:
+            vars["current_state"] = 0
+        '''
 
 def bankersAlgorithm():
-    temp_need_matrix = NeedMatrix(objects["need_matrix"].n_processes, objects["need_matrix"].n_resources)
-    temp_need_matrix.vals = objects["need_matrix"].vals
-    i = 0
-    
-    while i < vars["input_processes"].value:
-        if (i+1) in vars["safe_sequence"]:
-            i += 1
-            continue
-        if objects["available_vector"].vals >= temp_need_matrix.vals[i]:
-            vars["safe_sequence"].append(i+1)
-            for j in range(vars["input_resources"].value):
-                objects["available_vector"].vals[j] += objects["alloc_matrix"].vals[i][j]
-                objects["alloc_matrix"].vals[i][j] = 0
-            i = 0
-            continue
-        i += 1
-
-# Maybe print the sequence as its creating
-'''
-def bankersAlgorithm():
-    temp_need_matrix = NeedMatrix(objects["need_matrix"].n_processes, objects["need_matrix"].n_resources)
-    temp_need_matrix.vals = objects["need_matrix"].vals
-    i = 0
-    time = millis()
-    
-    while i < vars["input_processes"].value:
-        if (millis() - time >= 1000):
-            if (i+1) in vars["safe_sequence"]:
-                i += 1
-                continue
-            if objects["available_vector"].vals >= temp_need_matrix.vals[i]:
-                vars["safe_sequence"].append(i+1)
+    if vars["counter"] < vars["input_processes"].value:
+        if (millis() - vars["time"] >= 1000):
+            if sum(objects["need_matrix"].vals[vars["counter"]]) == 0:
+                vars["counter"] += 1
+            elif objects["available_vector"].vals >= objects["need_matrix"].vals[vars["counter"]]:
+                vars["safe_sequence"].append(vars["counter"]+1)
                 for j in range(vars["input_resources"].value):
-                    objects["available_vector"].vals[j] += objects["alloc_matrix"].vals[i][j]
-                    objects["alloc_matrix"].vals[i][j] = 0
+                    objects["available_vector"].vals[j] += objects["alloc_matrix"].vals[vars["counter"]][j]
+                    objects["alloc_matrix"].vals[vars["counter"]][j] = 0
+                    objects["need_matrix"].vals[vars["counter"]][j] = 0
                 
                 vars["sequence_string"] = "<"
                 for j in vars["safe_sequence"]:
                     vars["sequence_string"] += "P" + str(j) + ", "
                 vars["sequence_string"] = vars["sequence_string"][:-2]
                 vars["sequence_string"] += "> It's a safe sequence"
-                textSize(24)
-                fill(0, 255, 0)
-                print(vars["sequence_string"])
-                text(vars["sequence_string"], 600, 300)
-                i = 0
-                time = millis()
-                continue
-            i += 1
-'''
+                vars["counter"] = 0
+                vars["time"] = millis()
+            else:
+                vars["counter"] += 1
+        if len(vars["sequence_string"]) > 0:
+            background(220, 220, 220)
+            renderObjects()
+            textSize(24)
+            fill(0, 150, 0)
+            text(vars["sequence_string"], 600, 300)
+    else:
+        vars["current_state"] = 9
