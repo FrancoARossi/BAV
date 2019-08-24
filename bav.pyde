@@ -10,10 +10,8 @@ vars = {
         "safe_sequence" : [],
         "sequence_string" : "",
         "time" : 0,
-        "counter" : 0
+        "counter" : -1
         }
-
-objects = {}
 
 #####Classes#####
 
@@ -92,7 +90,7 @@ class MaxMatrix(Matrix):
                 self.column_counter = 0
             if (self.row_counter == self.n_processes):
                 vars["current_state"] = 5
-                objects["alloc_matrix"].is_renderable = True
+                objects[2].is_renderable = True
             vars["valid_input"] = False
     
     def printValues(self):
@@ -129,7 +127,7 @@ class AllocMatrix(Matrix):
             self.vals[self.row_counter][self.column_counter] = int(key)
 
         if ((key == ENTER or key == RETURN) and vars["valid_input"]):
-            if (self.vals[self.row_counter][self.column_counter] > objects["max_matrix"].vals[self.row_counter][self.column_counter]):
+            if (self.vals[self.row_counter][self.column_counter] > objects[1].vals[self.row_counter][self.column_counter]):
                 raise Exception("Can't allocate more resources than need")
             if (self.column_counter < self.n_resources):
                 self.column_counter += 1
@@ -195,11 +193,12 @@ class TotalVector(object):
             self.vals.append('')
     
     def render(self):
-        noFill()
+        fill(0)
         textSize(20)
         strokeWeight(1.5)
         
         text("Total", self.vector_x, self.vector_y - DISTANCE - 10)
+        noFill()
         rect(self.vector_x, self.vector_y, self.n_resources*DISTANCE, DISTANCE)
         if (self.n_resources >= 1):
             for i in range(1, self.n_resources):
@@ -218,7 +217,7 @@ class TotalVector(object):
                 self.column_counter += 1
             else:
                 vars["current_state"] = 4
-                objects["max_matrix"].is_renderable = True
+                objects[1].is_renderable = True
             vars["valid_input"] = False
     
     def printValues(self):
@@ -299,9 +298,11 @@ class InputBox(object):
 vars["input_processes"] = InputBox(1)
 vars["input_resources"] = InputBox(2)
 
-def renderObjects():
+objects = []
+
+def renderObjects(objects):
     fill(0)
-    for object in objects.values():
+    for object in objects:
             if object.is_renderable:
                 object.render()
                 object.printValues()
@@ -313,13 +314,15 @@ def setup():
     background(220, 220, 220)
     stroke(0)
     
-    font = loadFont("ArialNarrow-32.vlw")
+    font = loadFont("ArialRoundedMTBold-48.vlw")
+    textFont(font)
 
 def draw():
     
     background(220, 220, 220)
+    drawWatermarkAndExit()
     #DEBUG
-    print(vars["current_state"])
+    #print(vars["current_state"])
     
     #Read amount of processes
     if (vars["current_state"] == 0):
@@ -335,94 +338,135 @@ def draw():
     
     #Instanciate objects
     if (vars["current_state"] == 2):
-        objects["total_vector"] = TotalVector(vars["input_processes"].value, vars["input_resources"].value)
-        objects["total_vector"].initObject()
-        objects["max_matrix"] = MaxMatrix(vars["input_processes"].value, vars["input_resources"].value)
-        objects["max_matrix"].initObject()
-        objects["alloc_matrix"] = AllocMatrix(vars["input_processes"].value, vars["input_resources"].value)
-        objects["alloc_matrix"].initObject()
-        renderObjects()
+        objects.append(TotalVector(vars["input_processes"].value, vars["input_resources"].value))
+        objects[0].initObject()
+        objects.append(MaxMatrix(vars["input_processes"].value, vars["input_resources"].value))
+        objects[1].initObject()
+        objects.append(AllocMatrix(vars["input_processes"].value, vars["input_resources"].value))
+        objects[2].initObject()
+        renderObjects(objects)
         vars["current_state"] = 3
         
     
     #Read total_vector values
     if (vars["current_state"] == 3):
-        renderObjects()
-        objects["total_vector"].readValues()
+        objects[0].render()
+        objects[0].printValues()
+        objects[1].render()
+        objects[1].printValues()
+        objects[2].render()
+        objects[2].printValues()
+        objects[0].readValues()
     
     #Read max_matrix values
     if (vars["current_state"] == 4):
-        renderObjects()
-        objects["max_matrix"].readValues()
+        objects[0].render()
+        objects[0].printValues()
+        objects[1].render()
+        objects[1].printValues()
+        objects[2].render()
+        objects[2].printValues()
+        objects[1].readValues()
         
     #Read alloc_matrix values
     if (vars["current_state"] == 5):
-        renderObjects()
-        objects["alloc_matrix"].readValues()
+        objects[0].render()
+        objects[0].printValues()
+        objects[1].render()
+        objects[1].printValues()
+        objects[2].render()
+        objects[2].printValues()
+        objects[2].readValues()
     
     #available_vector instanciation
     if (vars["current_state"] == 6):
-        objects["available_vector"] = AvailableVector(objects["total_vector"].n_processes, objects["total_vector"].n_resources)
-        objects["available_vector"].initObject(objects["total_vector"], objects["alloc_matrix"])
-        renderObjects()
+        objects.append(AvailableVector(objects[0].n_processes, objects[0].n_resources))
+        objects[3].initObject(objects[0], objects[2])
+        objects[0].render()
+        objects[0].printValues()
+        objects[1].render()
+        objects[1].printValues()
+        objects[2].render()
+        objects[2].printValues()
+        objects[3].render()
+        objects[3].printValues()
         vars["current_state"] = 7
     
     #need_matrix creation
     if (vars["current_state"] == 7):
-        renderObjects()
-        objects["need_matrix"] = objects["max_matrix"] - objects["alloc_matrix"]
-        objects["need_matrix"].is_renderable = True
+        objects.append(objects[1] - objects[2])
+        objects[4].is_renderable = True
         vars["current_state"] = 8
     
     #Using Bankers Algorithm
     if (vars["current_state"] == 8):
-        renderObjects()
-        bankersAlgorithm()
+        renderObjects(objects)
+        bankersAlgorithm(objects)
     
     #Show results    
     if (vars["current_state"] == 9):
-        renderObjects()
-        textSize(24)
+        renderObjects(objects)
+        textSize(20)
         if len(vars["safe_sequence"]) == vars["input_processes"].value:
             fill(0, 150, 0)
-            text(vars["sequence_string"], 600, 300)
+            text(vars["sequence_string"], 600, 100)
         else:
             fill(150, 0, 0)
-            text("DEADLOCK", 600, 300)
+            text("DEADLOCK", 600, 100)
         fill(0)
-        textSize(32)
-        text("Press ENTER to start again", 600, 200)
-        '''
+        textSize(24)
+        text("Press ENTER to start again", 600, 50)
         if (key == ENTER or key == RETURN) and keyPressed:
             vars["current_state"] = 0
-        '''
+            global objects
+            objects = []
+            vars["counter"] = 0
+            vars["time"] = 0
+            vars["safe_sequence"] = []
+            vars["input_processes"].value = 1
+            vars["input_resources"].value = 1
+            
 
-def bankersAlgorithm():
+def bankersAlgorithm(objects):
+    #objects indexes = 0: TotalVector, 1: MaxMatrix, 2: AllocMatrix, 3: AvailableVector, 4: NeedMatrix
     if vars["counter"] < vars["input_processes"].value:
+        if vars["counter"] == -1:
+            vars["time"] = millis()
+            vars["counter"] += 1
         if (millis() - vars["time"] >= 1000):
-            if sum(objects["need_matrix"].vals[vars["counter"]]) == 0:
+            if vars["counter"]+1 in vars["safe_sequence"]:
                 vars["counter"] += 1
-            elif objects["available_vector"].vals >= objects["need_matrix"].vals[vars["counter"]]:
+            elif objects[3].vals >= objects[4].vals[vars["counter"]]:
                 vars["safe_sequence"].append(vars["counter"]+1)
                 for j in range(vars["input_resources"].value):
-                    objects["available_vector"].vals[j] += objects["alloc_matrix"].vals[vars["counter"]][j]
-                    objects["alloc_matrix"].vals[vars["counter"]][j] = 0
-                    objects["need_matrix"].vals[vars["counter"]][j] = 0
+                    objects[3].vals[j] += objects[2].vals[vars["counter"]][j]
+                    objects[2].vals[vars["counter"]][j] = 0
+                    objects[4].vals[vars["counter"]][j] = 0
                 
                 vars["sequence_string"] = "<"
                 for j in vars["safe_sequence"]:
                     vars["sequence_string"] += "P" + str(j) + ", "
                 vars["sequence_string"] = vars["sequence_string"][:-2]
                 vars["sequence_string"] += "> It's a safe sequence"
-                vars["counter"] = 0
-                vars["time"] = millis()
+                vars["counter"] = -1
             else:
                 vars["counter"] += 1
         if len(vars["sequence_string"]) > 0:
             background(220, 220, 220)
-            renderObjects()
-            textSize(24)
+            drawWatermarkAndExit()
+            renderObjects(objects)
+            textSize(20)
             fill(0, 150, 0)
-            text(vars["sequence_string"], 600, 300)
+            text(vars["sequence_string"], 600, 100)
     else:
         vars["current_state"] = 9
+
+def drawWatermarkAndExit():
+    github_logo = loadImage("github-logo.png")
+    tint(255, 126)
+    image(github_logo, 940, 580)
+    noTint()
+    textSize(18)
+    text("Press ESC to exit", 10, 620)
+    fill(0, 0, 0 , 126)
+    text("FrancoARossi", 1010, 620)
