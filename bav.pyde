@@ -10,7 +10,9 @@ vars = {
         "safe_sequence" : [],
         "sequence_string" : "",
         "time" : 0,
-        "counter" : -1
+        "counter" : -1,
+        "blocked_units" : [],
+        "repeat" : False
         }
 
 objects = []
@@ -91,7 +93,7 @@ class MaxMatrix(Matrix):
                 self.row_counter += 1
                 self.column_counter = 0
             if (self.row_counter == self.n_processes):
-                vars["current_state"] = 5
+                vars["current_state"] = 6
                 objects[2].is_renderable = True
             vars["valid_input"] = False
     
@@ -137,7 +139,7 @@ class AllocMatrix(Matrix):
                 self.row_counter += 1
                 self.column_counter = 0
             if (self.row_counter == self.n_processes):
-                vars["current_state"] = 6
+                vars["current_state"] = 7
             vars["valid_input"] = False
     
     def printValues(self):
@@ -220,7 +222,7 @@ class TotalVector(object):
             if (self.column_counter < (self.n_resources - 1)):
                 self.column_counter += 1
             else:
-                vars["current_state"] = 4
+                vars["current_state"] = 5
                 objects[1].is_renderable = True
             vars["valid_input"] = False
     
@@ -276,14 +278,18 @@ class AvailableVector(object):
 #####InputBox#####
     
 class InputBox(object):
-    def __init__(self, next_state = 0):
+    def __init__(self, next_state, type):
         self.value = 1
         self.next_state = next_state
+        self.type = type
         
     def render(self):
         fill(255)
         strokeWeight(1)
         rect(525, 275, 100, 100)
+        fill(0)
+        textSize(30)
+        text(self.type, 500, 200)
     
     def readValue(self):
         if (key.isdigit() and key != '0' and key != ENTER and key != RETURN):
@@ -298,6 +304,29 @@ class InputBox(object):
         fill(0)
         textSize(50)
         text(self.value, 560, 345)
+
+class InputBoxYN(InputBox):
+    def __init__(self, next_state, type):
+        self.value = ''
+        self.next_state = next_state
+        self.type = type
+    
+    def render(self):
+        fill(255)
+        strokeWeight(1)
+        rect(525, 275, 100, 100)
+        fill(0)
+        textSize(30)
+        text(self.type, 450, 200)
+        
+    def readValue(self):
+        if (key == 'Y' or key == 'y' or key == 'N' or key == 'n'):
+            vars["valid_input"] = True
+            self.value = key.upper()
+    
+        if ((key == ENTER or key == RETURN) and vars["valid_input"]):
+            vars["current_state"] = self.next_state
+            vars["valid_input"] = False
 
 #####Resource Allocation Graph#####
 
@@ -342,7 +371,7 @@ class Resource(object):
     
     def render(self):
         fill(255, 255, 255)
-        stroke(1.5)
+        strokeWeight(1.5)
         textSize(24)
         ellipseMode(CENTER)
         
@@ -359,6 +388,15 @@ class Process(object):
         self.i_process = i_process
         self.process_y = GLOBAL_Y + 420
         self.k = 0
+        self.used_units = []
+        if i_process == 0:
+            self.R = 40
+            self.G = 80
+            self.B = 160
+        else:
+            self.R = 200/(i_process+1)
+            self.G = 180/(i_process+1)
+            self.B = 255/(i_process+1)
         
         if self.n_processes % 2 == 0:
             if self.i_process > 1:
@@ -383,16 +421,33 @@ class Process(object):
     
     def render(self):
         fill(255, 255, 255)
-        stroke(1.5)
+        strokeWeight(1.5)
         textSize(24)
         ellipseMode(CENTER)
         
         ellipse(self.process_x, self.process_y, 80, 80)
         fill(0)
         text("P" + str(self.i_process+1), self.process_x - 15, self.process_y + 10)
-
-class Connections(object):
+    
+    def renderConnections(self, resources, alloc_units, need_units):
+        process_top_y = self.process_y - 40
+        i = -1
+        strokeWeight(4)
+        stroke(self.R, self.G, self.B)
         
+        for alloc_amount in alloc_units:
+            i += 1
+            for j in range(alloc_amount):
+                available_units = [unit for unit in resources[i].unit_coords if unit not in vars["blocked_units"]]
+                if len(available_units) > 0:
+                    vars["blocked_units"].append(available_units[0])
+                    line(self.process_x, process_top_y, available_units[0][0], available_units[0][1])
+        i = -1
+        for need_unit in need_units:
+            i += 1
+            for j in range(need_unit):
+                line(self.process_x, process_top_y, resources[i].resource_x + 40, resources[i].resource_y + 80)
+        stroke(0)
 
 #####Functions#####
 
@@ -409,7 +464,7 @@ def bankersAlgorithm(objects):
         if vars["counter"] == -1:
             vars["time"] = millis()
             vars["counter"] += 1
-        if (millis() - vars["time"] >= 1000):
+        if (millis() - vars["time"] >= 500):
             if vars["counter"]+1 in vars["safe_sequence"]:
                 vars["counter"] += 1
             elif objects[3].vals >= objects[4].vals[vars["counter"]]:
@@ -430,13 +485,15 @@ def bankersAlgorithm(objects):
         if len(vars["sequence_string"]) > 0:
             background(220, 220, 220)
             drawWatermarkAndExit()
+            delay(500)
             renderObjects(objects)
             textSize(20)
             fill(0, 150, 0)
             text(vars["sequence_string"], 600, 100)
-            renderRAG(objects)
+            renderDinamicRAG(objects)
+            vars["blocked_units"] = []
     else:
-        vars["current_state"] = 9
+        vars["current_state"] = 10
 
 def drawWatermarkAndExit():
     github_logo = loadImage("github-logo.png")
@@ -448,15 +505,15 @@ def drawWatermarkAndExit():
     fill(0, 0, 0 , 126)
     text("FrancoARossi", 1010, 620)
 
-def renderRAG(objects):
+def renderDinamicRAG(objects):
     #objects indexes = 0: TotalVector, 1: MaxMatrix, 2: AllocMatrix, 3: AvailableVector, 4: NeedMatrix
     resources = [Resource(vars["input_resources"].value, objects[0].vals[i], i) for i in range(vars["input_resources"].value)]
     for r in resources:
         r.render()
     processes = [Process(vars["input_processes"].value, i) for i in range(vars["input_processes"].value)]
-    for p in processes:
-        p.render()
-    connections = [Connections(objects, resources[i], processes[i], i) for i in range()]
+    for i in range(vars["input_processes"].value):
+        processes[i].render()
+        processes[i].renderConnections(resources, objects[2].vals[i], objects[4].vals[i])
 
 #####MAIN#####
 
@@ -466,8 +523,9 @@ def setup():
     frameRate(24.0)
     background(220, 220, 220)
     stroke(0)
-    vars["input_processes"] = InputBox(1)
-    vars["input_resources"] = InputBox(2)
+    vars["input_processes"] = InputBox(1, "Processes")
+    vars["input_resources"] = InputBox(2, "Resources")
+    vars["input_dinamic"] = InputBoxYN(3, "Dinamic Graph? (Y/N)")
     
     font = loadFont("ArialRoundedMTBold-48.vlw")
     textFont(font)
@@ -477,8 +535,9 @@ def draw():
     background(220, 220, 220)
     drawWatermarkAndExit()
     
-    if (vars["current_state"] > 3):
-        renderRAG(objects)
+    if (vars["current_state"] > 7):
+        renderDinamicRAG(objects)
+        vars["blocked_units"] = []
     
     #Read amount of processes
     if (vars["current_state"] == 0):
@@ -494,6 +553,11 @@ def draw():
     
     #Instanciate objects
     if (vars["current_state"] == 2):
+        vars["input_dinamic"].render()
+        vars["input_dinamic"].readValue()
+        vars["input_dinamic"].printValue()
+    
+    if (vars["current_state"] == 3):
         objects.append(TotalVector(vars["input_processes"].value, vars["input_resources"].value))
         objects[0].initObject()
         objects.append(MaxMatrix(vars["input_processes"].value, vars["input_resources"].value))
@@ -501,11 +565,11 @@ def draw():
         objects.append(AllocMatrix(vars["input_processes"].value, vars["input_resources"].value))
         objects[2].initObject()
         renderObjects(objects)
-        vars["current_state"] = 3
+        vars["current_state"] = 4
         
     
     #Read total_vector values
-    if (vars["current_state"] == 3):
+    if (vars["current_state"] == 4):
         objects[0].render()
         objects[0].printValues()
         objects[1].render()
@@ -515,7 +579,7 @@ def draw():
         objects[0].readValues()
     
     #Read max_matrix values
-    if (vars["current_state"] == 4):
+    if (vars["current_state"] == 5):
         objects[0].render()
         objects[0].printValues()
         objects[1].render()
@@ -525,7 +589,7 @@ def draw():
         objects[1].readValues()
         
     #Read alloc_matrix values
-    if (vars["current_state"] == 5):
+    if (vars["current_state"] == 6):
         objects[0].render()
         objects[0].printValues()
         objects[1].render()
@@ -535,7 +599,7 @@ def draw():
         objects[2].readValues()
     
     #available_vector instanciation
-    if (vars["current_state"] == 6):
+    if (vars["current_state"] == 7):
         objects.append(AvailableVector(objects[0].n_processes, objects[0].n_resources))
         objects[3].initObject(objects[0], objects[2])
         objects[0].render()
@@ -546,21 +610,21 @@ def draw():
         objects[2].printValues()
         objects[3].render()
         objects[3].printValues()
-        vars["current_state"] = 7
-    
-    #need_matrix creation
-    if (vars["current_state"] == 7):
-        objects.append(objects[1] - objects[2])
-        objects[4].is_renderable = True
         vars["current_state"] = 8
     
-    #Using Bankers Algorithm
+    #need_matrix creation
     if (vars["current_state"] == 8):
+        objects.append(objects[1] - objects[2])
+        objects[4].is_renderable = True
+        vars["current_state"] = 9
+    
+    #Using Bankers Algorithm
+    if (vars["current_state"] == 9):
         renderObjects(objects)
         bankersAlgorithm(objects)
     
     #Show results    
-    if (vars["current_state"] == 9):
+    if (vars["current_state"] == 10):
         renderObjects(objects)
         textSize(20)
         if len(vars["safe_sequence"]) == vars["input_processes"].value:
