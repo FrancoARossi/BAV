@@ -301,14 +301,44 @@ class InputBox(object):
 
 #####Resource Allocation Graph#####
 
-class Resource():
+class Resource(object):
     
     def __init__(self, n_resources, units, i_resource):
         self.n_resources = n_resources
         self.units = units
         self.i_resource = i_resource
         self.resource_y = GLOBAL_Y + 80
-        self.resource_x = GLOBAL_X + 650
+        self.k = 0
+        
+        if self.n_resources % 2 == 0:
+            if self.i_resource > 1:
+                self.k = 3
+            else:
+                self.k = 1
+        else:
+            if self.n_resources == 3:
+                if self.i_resource == 0:
+                    self.k = 0
+                elif self.i_resource in range(1, 3):
+                    self.k = 2
+            else:
+                if self.i_resource == 0:
+                    self.k = 0
+                elif self.i_resource in range(1, 3):
+                    self.k = 1.5
+                else:
+                    self.k = 3
+        self.resource_x = GLOBAL_X + 650 + 80*pow(-1, self.i_resource)*self.k
+        self.unit_coords = []
+        
+        for unit in range(self.units):
+            if unit == 0:
+                c = 0
+            elif unit % self.units > 2:
+                c = 2
+            else:
+                c = 1
+            self.unit_coords.append((self.resource_x + 40 + 15*c*pow(-1, unit), self.resource_y + 60))
     
     def render(self):
         fill(255, 255, 255)
@@ -316,54 +346,40 @@ class Resource():
         textSize(24)
         ellipseMode(CENTER)
         
-        if self.n_resources % 2 == 0:
-            if self.i_resource > 1:
-                k = 3
-            else:
-                k = 1
-            rect(self.resource_x + 80*pow(-1, self.i_resource)*k, self.resource_y, 80, 80)
-            fill(0)
-            text("R" + str(self.i_resource+1), self.resource_x + 80*k*pow(-1, self.i_resource) + 25, self.resource_y + 30)
-            for unit in range(self.units):
-                if unit == 0:
-                    c = 0
-                elif unit % self.units > 2:
-                    c = 2
-                else:
-                    c = 1
-                ellipse(self.resource_x + 80*pow(-1, self.i_resource)*k + 40 + 15*c*pow(-1, unit), self.resource_y + 60, 10, 10)
-        else:
-            if self.n_resources == 3:
-                if self.i_resource == 0:
-                    k = 0
-                elif self.i_resource in range(1, 3):
-                    k = 2
-            else:
-                if self.i_resource == 0:
-                    k = 0
-                elif self.i_resource in range(1, 3):
-                    k = 1.5
-                else:
-                    k = 3
-            rect(self.resource_x + 80*pow(-1, self.i_resource)*k, self.resource_y, 80, 80)
-            fill(0)
-            text("R" + str(self.i_resource+1), self.resource_x + 80*k*pow(-1, self.i_resource) + 25, self.resource_y + 30)
-            for unit in range(self.units):
-                if unit == 0:
-                    c = 0
-                elif unit % self.units > 2:
-                    c = 2
-                else:
-                    c = 1
-                ellipse(self.resource_x + 80*pow(-1, self.i_resource)*k + 40 + 15*c*pow(-1, unit), self.resource_y + 60, 10, 10)
+        rect(self.resource_x, self.resource_y, 80, 80)
+        fill(0)
+        text("R" + str(self.i_resource+1), self.resource_x + 25, self.resource_y + 30)
+        for x, y in self.unit_coords:
+            ellipse(x, y, 10, 10)
 
-class Process():
+class Process(object):
     
     def __init__(self, n_processes, i_process):
         self.n_processes = n_processes
         self.i_process = i_process
         self.process_y = GLOBAL_Y + 420
-        self.process_x = GLOBAL_X + 690
+        self.k = 0
+        
+        if self.n_processes % 2 == 0:
+            if self.i_process > 1:
+                self.k = 3
+            else:
+                self.k = 1
+        else:
+            if self.n_processes == 3:
+                if self.i_process == 0:
+                    self.k = 0
+                elif self.i_process in range(1, 3):
+                    self.k = 2
+            else:
+                if self.i_process == 0:
+                    self.k = 0
+                elif self.i_process in range(1, 3):
+                    self.k = 1.5
+                else:
+                    self.k = 3
+        
+        self.process_x = GLOBAL_X + 690 + 80*pow(-1, self.i_process)*self.k
     
     def render(self):
         fill(255, 255, 255)
@@ -371,30 +387,11 @@ class Process():
         textSize(24)
         ellipseMode(CENTER)
         
-        if self.n_processes % 2 == 0:
-            if self.i_process > 1:
-                k = 3
-            else:
-                k = 1
-            ellipse(self.process_x + 80*pow(-1, self.i_process)*k, self.process_y, 80, 80)
-            fill(0)
-            text("P" + str(self.i_process+1), self.process_x + 80*k*pow(-1, self.i_process) - 15, self.process_y + 10 )
-        else:
-            if self.n_processes == 3:
-                if self.i_process == 0:
-                    k = 0
-                elif self.i_process in range(1, 3):
-                    k = 2
-            else:
-                if self.i_process == 0:
-                    k = 0
-                elif self.i_process in range(1, 3):
-                    k = 1.5
-                else:
-                    k = 3
-            ellipse(self.process_x + 80*pow(-1, self.i_process)*k, self.process_y, 80, 80)
-            fill(0)
-            text("P" + str(self.i_process+1), self.process_x + 80*k*pow(-1, self.i_process) - 15, self.process_y + 10)
+        ellipse(self.process_x, self.process_y, 80, 80)
+        fill(0)
+        text("P" + str(self.i_process+1), self.process_x - 15, self.process_y + 10)
+
+class Connections(object):
         
 
 #####Functions#####
@@ -459,6 +456,7 @@ def renderRAG(objects):
     processes = [Process(vars["input_processes"].value, i) for i in range(vars["input_processes"].value)]
     for p in processes:
         p.render()
+    connections = [Connections(objects, resources[i], processes[i], i) for i in range()]
 
 #####MAIN#####
 
