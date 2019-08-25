@@ -13,7 +13,9 @@ vars = {
         "counter" : -1
         }
 
-#####Classes#####
+objects = []
+
+#####Matrixes#####
 
 class Matrix(object):
     
@@ -176,6 +178,8 @@ class NeedMatrix(Matrix):
                 fill(0)
                 textSize(25)
                 text(self.vals[i][j], (GLOBAL_X + 8) + (DISTANCE * j), (need_matrix_y + 25) + (DISTANCE * i))
+                
+#####Vectors#####
 
 class TotalVector(object):
     
@@ -268,6 +272,8 @@ class AvailableVector(object):
             fill(0)
             textSize(25)
             text(self.vals[i], (self.vector_x + 8) + (DISTANCE * i), self.vector_y + 25)
+
+#####InputBox#####
     
 class InputBox(object):
     def __init__(self, next_state = 0):
@@ -293,12 +299,76 @@ class InputBox(object):
         textSize(50)
         text(self.value, 560, 345)
 
-#####MAIN#####
+#####Resource Allocation Graph#####
 
-vars["input_processes"] = InputBox(1)
-vars["input_resources"] = InputBox(2)
+class Resource():
+    
+    def __init__(self, n_resources, units, i_resource):
+        self.n_resources = n_resources
+        self.units = units
+        self.i_resource = i_resource
+        self.resource_y = GLOBAL_Y + 80
+        self.resource_x = GLOBAL_X + 650
+    
+    def render(self):
+        fill(255, 255, 255)
+        stroke(1.5)
+        textSize(24)
+        ellipseMode(CENTER)
+        
+        # TODO: Add odd number of resources
+        if self.n_resources == 2:
+            rect(self.resource_x + 80*pow(-1, self.i_resource), self.resource_y, 80, 80)
+            fill(0)
+            text("R" + str(self.i_resource+1), self.resource_x + 80*pow(-1, self.i_resource) + 25, self.resource_y + 30)
+            for unit in range(self.units):
+                if unit == 0:
+                    c = 0
+                elif unit % self.units > 2:
+                    c = 2
+                else:
+                    c = 1
+                ellipse(self.resource_x + 80*pow(-1, self.i_resource) + 40 + 15*c*pow(-1, unit), self.resource_y + 60, 10, 10)
+        elif self.n_resources == 4:
+            if self.i_resource > 1:
+                k = 3
+            else:
+                k = 1
+            rect(self.resource_x + 80*pow(-1, self.i_resource)*k, self.resource_y, 80, 80)
+            fill(0)
+            text("R" + str(self.i_resource+1), self.resource_x + 80*k*pow(-1, self.i_resource) + 25, self.resource_y + 30)
+            for unit in range(self.units):
+                if unit == 0:
+                    c = 0
+                elif unit % self.units > 2:
+                    c = 2
+                else:
+                    c = 1
+                ellipse(self.resource_x + 80*pow(-1, self.i_resource)*k + 40 + 15*c*pow(-1, unit), self.resource_y + 60, 10, 10)
 
-objects = []
+class Process():
+    
+    def __init__(self, n_processes, i_process):
+        self.n_processes = n_processes
+        self.i_process = i_process
+        self.process_y = GLOBAL_Y + 420
+        if vars["input_resources"].value > self.n_processes:
+            self.process_x = GLOBAL_X + 2*DISTANCE*self.n_processes + 80*vars["input_resources"].value + 130*self.i_process
+        else:
+            self.process_x = GLOBAL_X + 2*DISTANCE*self.n_processes + 80 + 130*self.i_process
+    
+    def render(self):
+        fill(255, 255, 255)
+        stroke(1.5)
+        textSize(24)
+        ellipseMode(CENTER)
+        
+        ellipse(self.process_x, self.process_y, 100, 100)
+        fill(0)
+        text("P" + str(self.i_process+1), self.process_x - 15, self.process_y + 10)
+        
+
+#####Functions#####
 
 def renderObjects(objects):
     fill(0)
@@ -307,12 +377,69 @@ def renderObjects(objects):
                 object.render()
                 object.printValues()
 
+def bankersAlgorithm(objects):
+    #objects indexes = 0: TotalVector, 1: MaxMatrix, 2: AllocMatrix, 3: AvailableVector, 4: NeedMatrix
+    if vars["counter"] < vars["input_processes"].value:
+        if vars["counter"] == -1:
+            vars["time"] = millis()
+            vars["counter"] += 1
+        if (millis() - vars["time"] >= 1000):
+            if vars["counter"]+1 in vars["safe_sequence"]:
+                vars["counter"] += 1
+            elif objects[3].vals >= objects[4].vals[vars["counter"]]:
+                vars["safe_sequence"].append(vars["counter"]+1)
+                for j in range(vars["input_resources"].value):
+                    objects[3].vals[j] += objects[2].vals[vars["counter"]][j]
+                    objects[2].vals[vars["counter"]][j] = 0
+                    objects[4].vals[vars["counter"]][j] = 0
+                
+                vars["sequence_string"] = "<"
+                for j in vars["safe_sequence"]:
+                    vars["sequence_string"] += "P" + str(j) + ", "
+                vars["sequence_string"] = vars["sequence_string"][:-2]
+                vars["sequence_string"] += "> It's a safe sequence"
+                vars["counter"] = -1
+            else:
+                vars["counter"] += 1
+        if len(vars["sequence_string"]) > 0:
+            background(220, 220, 220)
+            drawWatermarkAndExit()
+            renderObjects(objects)
+            textSize(20)
+            fill(0, 150, 0)
+            text(vars["sequence_string"], 600, 100)
+    else:
+        vars["current_state"] = 9
+
+def drawWatermarkAndExit():
+    github_logo = loadImage("github-logo.png")
+    tint(255, 126)
+    image(github_logo, 940, 580)
+    noTint()
+    textSize(18)
+    text("Press ESC to exit", 10, 620)
+    fill(0, 0, 0 , 126)
+    text("FrancoARossi", 1010, 620)
+
+def renderRAG(objects):
+    #objects indexes = 0: TotalVector, 1: MaxMatrix, 2: AllocMatrix, 3: AvailableVector, 4: NeedMatrix
+    resources = [Resource(vars["input_resources"].value, objects[0].vals[i], i) for i in range(vars["input_resources"].value)]
+    for r in resources:
+        r.render()
+    processes = [Process(vars["input_processes"].value, i) for i in range(vars["input_processes"].value)]
+    for p in processes:
+        p.render()
+
+#####MAIN#####
+
 def setup():
     
     size(1150, 650)
     frameRate(24.0)
     background(220, 220, 220)
     stroke(0)
+    vars["input_processes"] = InputBox(1)
+    vars["input_resources"] = InputBox(2)
     
     font = loadFont("ArialRoundedMTBold-48.vlw")
     textFont(font)
@@ -321,8 +448,9 @@ def draw():
     
     background(220, 220, 220)
     drawWatermarkAndExit()
-    #DEBUG
-    #print(vars["current_state"])
+    
+    if (vars["current_state"] > 3):
+        renderRAG(objects)
     
     #Read amount of processes
     if (vars["current_state"] == 0):
@@ -425,48 +553,3 @@ def draw():
             vars["safe_sequence"] = []
             vars["input_processes"].value = 1
             vars["input_resources"].value = 1
-            
-
-def bankersAlgorithm(objects):
-    #objects indexes = 0: TotalVector, 1: MaxMatrix, 2: AllocMatrix, 3: AvailableVector, 4: NeedMatrix
-    if vars["counter"] < vars["input_processes"].value:
-        if vars["counter"] == -1:
-            vars["time"] = millis()
-            vars["counter"] += 1
-        if (millis() - vars["time"] >= 1000):
-            if vars["counter"]+1 in vars["safe_sequence"]:
-                vars["counter"] += 1
-            elif objects[3].vals >= objects[4].vals[vars["counter"]]:
-                vars["safe_sequence"].append(vars["counter"]+1)
-                for j in range(vars["input_resources"].value):
-                    objects[3].vals[j] += objects[2].vals[vars["counter"]][j]
-                    objects[2].vals[vars["counter"]][j] = 0
-                    objects[4].vals[vars["counter"]][j] = 0
-                
-                vars["sequence_string"] = "<"
-                for j in vars["safe_sequence"]:
-                    vars["sequence_string"] += "P" + str(j) + ", "
-                vars["sequence_string"] = vars["sequence_string"][:-2]
-                vars["sequence_string"] += "> It's a safe sequence"
-                vars["counter"] = -1
-            else:
-                vars["counter"] += 1
-        if len(vars["sequence_string"]) > 0:
-            background(220, 220, 220)
-            drawWatermarkAndExit()
-            renderObjects(objects)
-            textSize(20)
-            fill(0, 150, 0)
-            text(vars["sequence_string"], 600, 100)
-    else:
-        vars["current_state"] = 9
-
-def drawWatermarkAndExit():
-    github_logo = loadImage("github-logo.png")
-    tint(255, 126)
-    image(github_logo, 940, 580)
-    noTint()
-    textSize(18)
-    text("Press ESC to exit", 10, 620)
-    fill(0, 0, 0 , 126)
-    text("FrancoARossi", 1010, 620)
