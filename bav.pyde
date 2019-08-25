@@ -316,11 +316,14 @@ class Resource():
         textSize(24)
         ellipseMode(CENTER)
         
-        # TODO: Add odd number of resources
-        if self.n_resources == 2:
-            rect(self.resource_x + 80*pow(-1, self.i_resource), self.resource_y, 80, 80)
+        if self.n_resources % 2 == 0:
+            if self.i_resource > 1:
+                k = 3
+            else:
+                k = 1
+            rect(self.resource_x + 80*pow(-1, self.i_resource)*k, self.resource_y, 80, 80)
             fill(0)
-            text("R" + str(self.i_resource+1), self.resource_x + 80*pow(-1, self.i_resource) + 25, self.resource_y + 30)
+            text("R" + str(self.i_resource+1), self.resource_x + 80*k*pow(-1, self.i_resource) + 25, self.resource_y + 30)
             for unit in range(self.units):
                 if unit == 0:
                     c = 0
@@ -328,12 +331,20 @@ class Resource():
                     c = 2
                 else:
                     c = 1
-                ellipse(self.resource_x + 80*pow(-1, self.i_resource) + 40 + 15*c*pow(-1, unit), self.resource_y + 60, 10, 10)
-        elif self.n_resources == 4:
-            if self.i_resource > 1:
-                k = 3
+                ellipse(self.resource_x + 80*pow(-1, self.i_resource)*k + 40 + 15*c*pow(-1, unit), self.resource_y + 60, 10, 10)
+        else:
+            if self.n_resources == 3:
+                if self.i_resource == 0:
+                    k = 0
+                elif self.i_resource in range(1, 3):
+                    k = 2
             else:
-                k = 1
+                if self.i_resource == 0:
+                    k = 0
+                elif self.i_resource in range(1, 3):
+                    k = 1.5
+                else:
+                    k = 3
             rect(self.resource_x + 80*pow(-1, self.i_resource)*k, self.resource_y, 80, 80)
             fill(0)
             text("R" + str(self.i_resource+1), self.resource_x + 80*k*pow(-1, self.i_resource) + 25, self.resource_y + 30)
@@ -352,10 +363,7 @@ class Process():
         self.n_processes = n_processes
         self.i_process = i_process
         self.process_y = GLOBAL_Y + 420
-        if vars["input_resources"].value > self.n_processes:
-            self.process_x = GLOBAL_X + 2*DISTANCE*self.n_processes + 80*vars["input_resources"].value + 130*self.i_process
-        else:
-            self.process_x = GLOBAL_X + 2*DISTANCE*self.n_processes + 80 + 130*self.i_process
+        self.process_x = GLOBAL_X + 690
     
     def render(self):
         fill(255, 255, 255)
@@ -363,9 +371,30 @@ class Process():
         textSize(24)
         ellipseMode(CENTER)
         
-        ellipse(self.process_x, self.process_y, 100, 100)
-        fill(0)
-        text("P" + str(self.i_process+1), self.process_x - 15, self.process_y + 10)
+        if self.n_processes % 2 == 0:
+            if self.i_process > 1:
+                k = 3
+            else:
+                k = 1
+            ellipse(self.process_x + 80*pow(-1, self.i_process)*k, self.process_y, 80, 80)
+            fill(0)
+            text("P" + str(self.i_process+1), self.process_x + 80*k*pow(-1, self.i_process) - 15, self.process_y + 10 )
+        else:
+            if self.n_processes == 3:
+                if self.i_process == 0:
+                    k = 0
+                elif self.i_process in range(1, 3):
+                    k = 2
+            else:
+                if self.i_process == 0:
+                    k = 0
+                elif self.i_process in range(1, 3):
+                    k = 1.5
+                else:
+                    k = 3
+            ellipse(self.process_x + 80*pow(-1, self.i_process)*k, self.process_y, 80, 80)
+            fill(0)
+            text("P" + str(self.i_process+1), self.process_x + 80*k*pow(-1, self.i_process) - 15, self.process_y + 10)
         
 
 #####Functions#####
@@ -408,6 +437,7 @@ def bankersAlgorithm(objects):
             textSize(20)
             fill(0, 150, 0)
             text(vars["sequence_string"], 600, 100)
+            renderRAG(objects)
     else:
         vars["current_state"] = 9
 
