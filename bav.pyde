@@ -366,14 +366,7 @@ class Process(object):
         self.process_y = GLOBAL_Y + 420
         self.k = 0
         self.used_units = []
-        if i_process == 0:
-            self.R = 40
-            self.G = 80
-            self.B = 160
-        else:
-            self.R = 200/(i_process+1)
-            self.G = 180/(i_process+1)
-            self.B = 255/(i_process+1)
+        self.R, self.G, self.B = random(255), random(255), random(255)
         
         if self.n_processes % 2 == 0:
             if self.i_process > 1:
@@ -484,13 +477,11 @@ def drawWatermarkAndExit():
 
 def renderRAG(objects):
     #objects indexes = 0: TotalVector, 1: MaxMatrix, 2: AllocMatrix, 3: AvailableVector, 4: NeedMatrix
-    resources = [Resource(vars["input_resources"].value, objects[0].vals[i], i) for i in range(vars["input_resources"].value)]
-    for r in resources:
+    for r in vars["resources"]:
         r.render()
-    processes = [Process(vars["input_processes"].value, i) for i in range(vars["input_processes"].value)]
     for i in range(vars["input_processes"].value):
-        processes[i].render()
-        processes[i].renderConnections(resources, objects[2].vals[i], objects[4].vals[i])
+        vars["processes"][i].render()
+        vars["processes"][i].renderConnections(vars["resources"], objects[2].vals[i], objects[4].vals[i])
 
 #####MAIN#####
 
@@ -587,6 +578,8 @@ def draw():
     if (vars["current_state"] == 7):
         objects.append(objects[1] - objects[2])
         objects[4].is_renderable = True
+        vars["resources"] = [Resource(vars["input_resources"].value, objects[0].vals[i], i) for i in range(vars["input_resources"].value)]
+        vars["processes"] = [Process(vars["input_processes"].value, i) for i in range(vars["input_processes"].value)]
         vars["current_state"] = 8
     
     if (vars["current_state"] == 8):
@@ -595,7 +588,6 @@ def draw():
         textSize(24)
         text("Press SPACE to begin", 600, 50)
         if key == " ":
-            print(keyPressed)
             vars["current_state"] = 9
     
     #Using Bankers Algorithm
