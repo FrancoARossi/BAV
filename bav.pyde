@@ -615,5 +615,6 @@ def draw():
             vars["counter"] = 0
             vars["time"] = 0
             vars["safe_sequence"] = []
+            vars["sequence_string"] = ""
             vars["input_processes"].value = 1
             vars["input_resources"].value = 1

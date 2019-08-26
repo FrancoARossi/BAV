@@ -1,5 +1,8 @@
-# Bankers Algorithm Visualized
+# Bankers Algorithm Visualized (BAV)
 Visual implementation of the banker's algorithm using Processing.py
 
-![alt text](https://i.imgur.com/8TX7viI.png)
-![alt text](https://i.imgur.com/t96vMpq.png)
+- Demo 1:
+![Demo1](data/demo-1.gif)
+
+- Demo 2:
+![Demo2](data/demo-2.gif)
