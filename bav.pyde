@@ -93,7 +93,7 @@ class MaxMatrix(Matrix):
                 self.row_counter += 1
                 self.column_counter = 0
             if (self.row_counter == self.n_processes):
-                vars["current_state"] = 6
+                vars["current_state"] = 5
                 objects[2].is_renderable = True
             vars["valid_input"] = False
     
@@ -139,7 +139,7 @@ class AllocMatrix(Matrix):
                 self.row_counter += 1
                 self.column_counter = 0
             if (self.row_counter == self.n_processes):
-                vars["current_state"] = 7
+                vars["current_state"] = 6
             vars["valid_input"] = False
     
     def printValues(self):
@@ -222,7 +222,7 @@ class TotalVector(object):
             if (self.column_counter < (self.n_resources - 1)):
                 self.column_counter += 1
             else:
-                vars["current_state"] = 5
+                vars["current_state"] = 4
                 objects[1].is_renderable = True
             vars["valid_input"] = False
     
@@ -304,29 +304,6 @@ class InputBox(object):
         fill(0)
         textSize(50)
         text(self.value, 560, 345)
-
-class InputBoxYN(InputBox):
-    def __init__(self, next_state, type):
-        self.value = ''
-        self.next_state = next_state
-        self.type = type
-    
-    def render(self):
-        fill(255)
-        strokeWeight(1)
-        rect(525, 275, 100, 100)
-        fill(0)
-        textSize(30)
-        text(self.type, 450, 200)
-        
-    def readValue(self):
-        if (key == 'Y' or key == 'y' or key == 'N' or key == 'n'):
-            vars["valid_input"] = True
-            self.value = key.upper()
-    
-        if ((key == ENTER or key == RETURN) and vars["valid_input"]):
-            vars["current_state"] = self.next_state
-            vars["valid_input"] = False
 
 #####Resource Allocation Graph#####
 
@@ -490,7 +467,7 @@ def bankersAlgorithm(objects):
             textSize(20)
             fill(0, 150, 0)
             text(vars["sequence_string"], 600, 100)
-            renderDinamicRAG(objects)
+            renderRAG(objects)
             vars["blocked_units"] = []
     else:
         vars["current_state"] = 10
@@ -501,11 +478,11 @@ def drawWatermarkAndExit():
     image(github_logo, 940, 580)
     noTint()
     textSize(18)
-    text("Press ESC to exit", 10, 620)
+    text("Press ESC to exit", 10, 635)
     fill(0, 0, 0 , 126)
     text("FrancoARossi", 1010, 620)
 
-def renderDinamicRAG(objects):
+def renderRAG(objects):
     #objects indexes = 0: TotalVector, 1: MaxMatrix, 2: AllocMatrix, 3: AvailableVector, 4: NeedMatrix
     resources = [Resource(vars["input_resources"].value, objects[0].vals[i], i) for i in range(vars["input_resources"].value)]
     for r in resources:
@@ -525,7 +502,6 @@ def setup():
     stroke(0)
     vars["input_processes"] = InputBox(1, "Processes")
     vars["input_resources"] = InputBox(2, "Resources")
-    vars["input_dinamic"] = InputBoxYN(3, "Dinamic Graph? (Y/N)")
     
     font = loadFont("ArialRoundedMTBold-48.vlw")
     textFont(font)
@@ -536,7 +512,7 @@ def draw():
     drawWatermarkAndExit()
     
     if (vars["current_state"] > 7):
-        renderDinamicRAG(objects)
+        renderRAG(objects)
         vars["blocked_units"] = []
     
     #Read amount of processes
@@ -553,11 +529,6 @@ def draw():
     
     #Instanciate objects
     if (vars["current_state"] == 2):
-        vars["input_dinamic"].render()
-        vars["input_dinamic"].readValue()
-        vars["input_dinamic"].printValue()
-    
-    if (vars["current_state"] == 3):
         objects.append(TotalVector(vars["input_processes"].value, vars["input_resources"].value))
         objects[0].initObject()
         objects.append(MaxMatrix(vars["input_processes"].value, vars["input_resources"].value))
@@ -565,11 +536,11 @@ def draw():
         objects.append(AllocMatrix(vars["input_processes"].value, vars["input_resources"].value))
         objects[2].initObject()
         renderObjects(objects)
-        vars["current_state"] = 4
+        vars["current_state"] = 3
         
     
     #Read total_vector values
-    if (vars["current_state"] == 4):
+    if (vars["current_state"] == 3):
         objects[0].render()
         objects[0].printValues()
         objects[1].render()
@@ -579,7 +550,7 @@ def draw():
         objects[0].readValues()
     
     #Read max_matrix values
-    if (vars["current_state"] == 5):
+    if (vars["current_state"] == 4):
         objects[0].render()
         objects[0].printValues()
         objects[1].render()
@@ -589,7 +560,7 @@ def draw():
         objects[1].readValues()
         
     #Read alloc_matrix values
-    if (vars["current_state"] == 6):
+    if (vars["current_state"] == 5):
         objects[0].render()
         objects[0].printValues()
         objects[1].render()
@@ -599,7 +570,7 @@ def draw():
         objects[2].readValues()
     
     #available_vector instanciation
-    if (vars["current_state"] == 7):
+    if (vars["current_state"] == 6):
         objects.append(AvailableVector(objects[0].n_processes, objects[0].n_resources))
         objects[3].initObject(objects[0], objects[2])
         objects[0].render()
@@ -610,13 +581,22 @@ def draw():
         objects[2].printValues()
         objects[3].render()
         objects[3].printValues()
-        vars["current_state"] = 8
+        vars["current_state"] = 7
     
     #need_matrix creation
-    if (vars["current_state"] == 8):
+    if (vars["current_state"] == 7):
         objects.append(objects[1] - objects[2])
         objects[4].is_renderable = True
-        vars["current_state"] = 9
+        vars["current_state"] = 8
+    
+    if (vars["current_state"] == 8):
+        renderObjects(objects)
+        fill(0)
+        textSize(24)
+        text("Press SPACE to begin", 600, 50)
+        if key == " ":
+            print(keyPressed)
+            vars["current_state"] = 9
     
     #Using Bankers Algorithm
     if (vars["current_state"] == 9):
